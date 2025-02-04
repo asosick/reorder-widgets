@@ -4,10 +4,40 @@
 [![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/asosick/filament-layout-manager/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/asosick/filament-layout-manager/actions?query=workflow%3Arun-tests+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/asosick/filament-layout-manager.svg?style=flat-square)](https://packagist.org/packages/asosick/filament-layout-manager)
 
-
 ### Allow users to create & customize their own FilamentPHP pages composed of Livewire components
 ### Demo
 ![demo.gif](demo.gif)
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+    - [Generate a new page](#1-generate-a-new-page)
+    - [Extend your page from LayoutManagerPage](#2-extend-your-page-from-layoutmanagerpage)
+    - [Remove auto-generated $view property](#3-remove-auto-generated-view-property)
+    - [Define your components](#4-define-your-components)
+    - [Passing Widget Data](#passing-widget-data)
+    - [Renaming Selection Options](#renaming-selection-options)
+- [Multiple Layouts](#multiple-layouts)
+- [Customization](#customization)
+    - [Extend LayoutManager](#2-extend-layoutmanager)
+    - [Update Config](#3-update-config)
+- [Saving Layouts to a Database](#saving-layouts-to-a-database)
+- [Adding Header Actions](#adding-header-actions)
+- [Wrapping in a FilamentPHP page](#optional-wrapping-in-a-filamentphp-page)
+- [Child Component Data Stores](#child-component-data-stores)
+    - [Why is this useful?](#why-is-this-useful)
+    - [Event Hook](#event-hook)
+    - [Updating the component's store](#updating-the-components-store)
+    - [Using the store](#using-the-store)
+    - [Customizing](#customizing)
+- [Changelog](#changelog)
+- [Contributing](#contributing)
+- [Security Vulnerabilities](#security-vulnerabilities)
+- [Credits](#credits)
+- [License](#license)
+
+
 ## Installation
 
 You can install the package via composer:
@@ -34,7 +64,7 @@ php artisan vendor:publish --tag="filament-layout-manager-translations"
 ```
 
 ## Usage
-Filament Layout Manager is easiest to use with a new page. You can create one as so
+The easiest way to use Filament Layout Manager is by creating a new page.
 
 ### 1. Generate a new page
 ```bash
@@ -68,10 +98,6 @@ You can now define the livewire components you'd like users to be able to add to
 ```php
 class TestPage extends LayoutManagerPage
 {
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
-
-    protected ?string $maxContentWidth = MaxWidth::class;
-
     protected function getComponents(): array
     {
         // Replace with your chosen components
@@ -88,7 +114,7 @@ You can now visit your page, unlock your layout, and begin reorganizing.
 ### Passing Widget Data
 Similar to a traditional filament page, you are able to pass data directly to your widgets. (Support for passing data to custom components coming soon...)
 
-***Keep in mind, data passed to this widget will be applied to all instances of this widget***
+***NOTE: Data passed to this widget will be applied to all its instances. For component specific data, see section below on component data stores***
 
 ```php
 class TestPage extends LayoutManagerPage
@@ -108,7 +134,7 @@ This passes your data `['company'=>'Apple']` to your widget in a `data` property
 class CompaniesWidget extends BaseWidget
 {
     public array $data;
-    public function mount($data){
+    public function mount(array $data){
         $this->data = $data;
     }
 //... other methods & properties
@@ -143,13 +169,12 @@ Each layout is mapped to a keybinding based on its number:
 * `command+2 | ctrl+2` => layout 2 
 * so forth...
 
-The default number of views can be changed by the `getLayoutCount()` function in your page class, or via the configuration file.
+Change the default number of views using the `getLayoutCount()` function in your page class or update the configuration file.
 
 ## Customization
-Your chosen livewire components are wrapped inside a custom livewire component class defined by this library which enables user manipulation.
+Filament Layout Manager wraps your Livewire components inside a customizable class, allowing users to modify them.
 
-Do not confuse this with the Page class or its blade view as defined above - that is not a livewire component, and is only responsible for rendering the
-wrapper component which encloses the livewire components you chose and enables users to manipulate them.
+This wrapper class is different from your Page class or its Blade view. The Page class renders the wrapper component, while the wrapper enables user manipulation of Livewire components.
 
 The wrapper class that must be extended to enable customization is `Asosick\FilamentLayoutManager\Http\Livewire\LayoutManager.php`
 
@@ -164,16 +189,12 @@ Create a new class in your application called (for example) `App\Livewire\Custom
 and extend that class off of `Asosick\FilamentLayoutManager\Http\Livewire\LayoutManager.php`
 
 ```php
-<?php
-
 namespace App\Livewire;
-
 use Asosick\FilamentLayoutManager\Http\Livewire\LayoutManager;
 use Filament\Actions\Action;
 
 class CustomLayoutManager extends LayoutManager
 {
-
     /* Example of changing the colour of the add button to red */
     public function addAction(): Action
     {
@@ -197,7 +218,7 @@ I recommend exploring the code in `LayoutManager` when digging into customizatio
 
 
 ### Saving Layouts to a Database
-Layouts by default are saved to a user's session, ergo they are not persisted to hard storage.
+By default, layouts are saved in the user's session and are not persisted
 
 In order to save your user's layout to a database (or file, etc.), you'll need to
 1. Override `LayoutManager` as shown above
@@ -241,9 +262,9 @@ class CustomLayoutManager extends LayoutManager
 ```
 
 ### Adding Header Actions
-Header actions can be add to the right of the 'Lock' button by overriding the `getHeaderActions()` method in your custom LayoutManager (*NOT your custom page*) class (see above to create one).
+Header actions can be add to the right of the 'Lock' button by overriding the `getHeaderActions()` method in your custom LayoutManager (*NOT your custom page*).
 
-Please see the example below on how to add custom actions to your LayoutManager.
+Example:
 ```php
 namespace App\Livewire;
 
@@ -281,7 +302,6 @@ class TestPage extends LayoutManagerPage
     {
         return true;
     }
-    
 
     /* Can now use existing filament header actions */
     protected function getHeaderActions(): array
@@ -301,10 +321,10 @@ or
 You may need to override some filament css hooks to get the spacing right for what you need.
 
 ## Child Component Data Stores
-You may want the child components (widgets, charts, generic components, etc.), to store additional information about themselves that can be reloaded along with a user's layout.
+Components can save data about themselves (like table filters or form values) and restore it when the user returns to the page.
 
 #### Why is this useful?
-In my application, I wanted table widgets to persist the filters users had applied to them across sessions. It's the little things that make your users smile after all.
+For example, in my application, I wanted table widgets to remember the filters users applied across sessions.
 
 Filament does provide a `persistToSession()` option for tables, but this does not work for multiple table widgets or across sessions.
 
@@ -318,15 +338,15 @@ Each livewire component can dispatch an event to the `LayoutManager` class to up
 
 ### Getting the component key and store
 
-Be sure to define the `container_key` and `store` property in your widget or component class, either directly or via the mount property.
+Define the container_key and store properties in your widget or component class
 ```php
 /* 
 Provide the following as part of your child component (like a widget class), to get the id and your data (in store).
 */
-public $container_key;
-public $store;
+public string $container_key;
+public array $store;
 
-public function mount($container_key, $store){
+public function mount(string $container_key, array $store){
     $this->container_key = $container_key;
     $this->store = $store;
 }

@@ -14,4 +14,7 @@ All notable changes to `filament-layout-manager` will be documented in this file
 - Updated styling for move/organize icons
 - Fixed border showing on white mode
 - Removed unneeded console.log in js script
-- Fixed modals not appearing on custom header actions 
+- Fixed modals not appearing on custom header actions
+
+## v1.1.0
+- Enable components to store and load data specific to their instance
